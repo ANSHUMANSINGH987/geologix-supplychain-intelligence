@@ -1,0 +1,18 @@
+# Virtual Environment
+venv/
+env/
+.env
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Power BI Auto-Recovery and Temp Files
+*.tmp
+*.temp
+
+# OS Specific
+.DS_Store
+Thumbs.db
