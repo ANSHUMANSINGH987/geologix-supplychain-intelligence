@@ -1,18 +1,33 @@
-# Virtual Environment
+# Environments & Packages
+.venv/
 venv/
 env/
-.env
+ENV/
+*.egg-info/
+dist/
+build/
 
-# Python Cache
+# Python Cache & Bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.coverage
+htmlcov/
 
-# Power BI Auto-Recovery and Temp Files
-*.tmp
-*.temp
+# Local Database & Docker Volumes
+pgdata/
+*.sqlite3
+*.db
 
-# OS Specific
+# IDE & OS Metadata
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
+
+# Sensitive Environment Configurations
+.env
+.env.local
+*.pem
+*.key

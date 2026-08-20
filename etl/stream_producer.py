@@ -1,50 +1,62 @@
 """
-GeoLogix: High-Throughput Kafka Stream Producer
-Simulates live vessel movements at 10+ pings/sec using physical interpolation.
+GeoLogix: Massive-Scale Kafka Stream Producer
+Simulates 500+ live commercial vessels across global corridors at 10 pings/sec.
 """
 import time
 import json
 import math
+import random
 import logging
 from datetime import datetime, timezone
 from confluent_kafka import Producer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] - %(message)s")
-logger = logging.getLogger("Kafka_Producer")
+logger = logging.getLogger("Kafka_Producer_Massive")
 
-KAFKA_BROKER = "localhost:9092"
+KAFKA_BROKER = "127.0.0.1:9093"
 TOPIC_NAME = "vessel_stream"
 
 producer_conf = {'bootstrap.servers': KAFKA_BROKER}
 kafka_producer = Producer(producer_conf)
 
-# Baseline state for interpolation
-FLEET = [
-    {"mmsi": 219018000, "imo": "IMO9632064", "name": "MAERSK MC-KINNEY MOLLER", "type": "ULCV", "lat": 12.50, "lon": 43.30, "sog": 18.5, "cog": 320.0, "cp": "BAB_EL_MANDEB"},
-    {"mmsi": 353131000, "imo": "IMO9839438", "name": "MSC GULSUN", "type": "ULCV", "lat": -34.30, "lon": 18.40, "sog": 19.2, "cog": 270.0, "cp": "CAPE_OF_GOOD_HOPE"},
-    {"mmsi": 228386800, "imo": "IMO9839210", "name": "CMA CGM JACQUES SAADE", "type": "LNG", "lat": 30.50, "lon": 32.20, "sog": 12.0, "cog": 10.0, "cp": "SUEZ_CANAL"}
+# Expanded Oceanic Zones for realistic map distribution
+ZONES = [
+    {"name": "CAPE_OF_GOOD_HOPE", "lat_range": (-40.0, 0.0), "lon_range": (20.0, 70.0), "cog_range": (210, 260)},
+    {"name": "BAB_EL_MANDEB", "lat_range": (5.0, 18.0), "lon_range": (45.0, 70.0), "cog_range": (270, 310)},
+    {"name": "SUEZ_CANAL", "lat_range": (32.0, 38.0), "lon_range": (5.0, 30.0), "cog_range": (100, 140)},
+    {"name": "STRAIT_OF_MALACCA", "lat_range": (0.0, 15.0), "lon_range": (85.0, 115.0), "cog_range": (90, 130)},
+    {"name": "NORTH_ATLANTIC", "lat_range": (20.0, 50.0), "lon_range": (-60.0, -10.0), "cog_range": (70, 110)}
 ]
 
-def delivery_report(err, msg):
-    """Callback triggered by Kafka once a message is delivered."""
-    if err is not None:
-        logger.error(f"Message delivery failed: {err}")
+VESSEL_TYPES = ["Ultra Large Container Vessel", "Neo-Panamax Container", "Suezmax Tanker", "LNG Carrier", "Bulk Carrier"]
+CARRIERS = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "COSCO", "ONE"]
+
+def generate_global_fleet(fleet_size=500):
+    fleet = []
+    for i in range(fleet_size):
+        zone = random.choice(ZONES)
+        fleet.append({
+            "mmsi": 200000000 + i,
+            "imo": f"IMO9{random.randint(100000, 999999)}",
+            "name": f"{random.choice(CARRIERS)} VOYAGER {i}",
+            "type": random.choice(VESSEL_TYPES),
+            "lat": random.uniform(*zone["lat_range"]),
+            "lon": random.uniform(*zone["lon_range"]),
+            "sog": random.uniform(12.0, 22.0),
+            "cog": random.uniform(*zone["cog_range"]),
+            "cp": zone["name"]
+        })
+    return fleet
 
 def stream_live_telemetry():
-    """Physics engine running at 10 Hz pushing to Kafka."""
-    logger.info(f"Starting Live Stream to Kafka Topic: {TOPIC_NAME} at 10 pings/sec")
-    
-    # Time delta per loop (0.1 seconds = 10 Hz)
+    logger.info("Initializing oceanic global fleet (500 vessels)...")
+    fleet = generate_global_fleet(500)
     dt_seconds = 0.1 
     
     try:
         while True:
-            for vessel in FLEET:
-                # Physics calculation: 1 knot = 0.514444 m/s. 
-                # Converting speed to degrees roughly (1 deg lat ~= 111,320m)
+            for vessel in fleet:
                 speed_ms = vessel["sog"] * 0.514444
-                
-                # Math angle (0 is North/COG, clockwise)
                 rad_heading = math.radians(90 - vessel["cog"]) 
                 
                 dx = (speed_ms * math.cos(rad_heading) * dt_seconds) / 111320.0
@@ -66,23 +78,19 @@ def stream_live_telemetry():
                     "timestamp_utc": datetime.now(timezone.utc).isoformat()
                 }
                 
-                # Push to Kafka
                 kafka_producer.produce(
                     TOPIC_NAME,
                     key=str(vessel["mmsi"]),
-                    value=json.dumps(payload),
-                    callback=delivery_report
+                    value=json.dumps(payload)
                 )
             
-            # Poll handles delivery callbacks, sleep maintains our 10Hz frequency
             kafka_producer.poll(0)
             time.sleep(dt_seconds)
             
     except KeyboardInterrupt:
-        logger.info("Streaming stopped by user.")
+        logger.info("Streaming stopped.")
     finally:
         kafka_producer.flush()
-        logger.info("Kafka producer flushed and safely shut down.")
 
 if __name__ == "__main__":
     stream_live_telemetry()

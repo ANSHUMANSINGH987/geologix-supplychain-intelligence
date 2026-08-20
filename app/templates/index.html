@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoLogix | Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@3.0.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.0.0/dist/maplibre-gl.css" rel="stylesheet" />
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
+        body { background-color: #FDFBF7; color: #1C2833; font-family: 'Inter', sans-serif; }
+        .serif { font-family: 'Playfair Display', serif; }
+        .text-editorial-red { color: #D73925; }
+        .border-editorial { border-color: #D1CFC7; }
+        
+        #map-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: transparent;
+        }
+        
+        /* Custom Tooltip Styling */
+        #tooltip {
+            position: absolute;
+            z-index: 1;
+            pointer-events: none;
+            background: #111827;
+            color: #F9FAFB;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            display: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 max-w-[1600px] mx-auto">
+
+    <header class="flex justify-between items-center border-b border-editorial pb-4 mb-6 text-sm uppercase tracking-widest font-semibold text-gray-600">
+        <div class="flex items-center space-x-4">
+            <span class="text-3xl font-black text-black tracking-tight serif">GEOLOGIX</span>
+            <span class="border-l border-editorial pl-4">Global Supply Chain Intelligence</span>
+        </div>
+        <div>{{ current_date }}</div>
+        <div class="text-editorial-red flex items-center">
+            LIVE MARITIME CONDITIONS <span class="ml-2 w-2 h-2 rounded-full bg-[#D73925] animate-pulse"></span>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-4 border-b border-editorial pb-6">
+        <div class="col-span-2">
+            <h1 class="text-5xl md:text-7xl font-black leading-[1.05] tracking-tight text-gray-900 uppercase serif">
+                Global Shipping Routes<br>Are Being Redrawn<span class="text-editorial-red">.</span>
+            </h1>
+            <p class="mt-4 text-xl text-gray-800 font-medium">
+                <span id="vessel-count" class="font-bold">{{ metrics.active_vessels }}</span> vessels actively reporting telemetry from disrupted corridors.
+            </p>
+        </div>
+        <div class="grid grid-cols-2 gap-4 border-l border-editorial pl-8">
+            <div>
+                <div class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-1">Suez</div>
+                <div class="text-3xl font-black text-editorial-red">+11.8 <span class="text-sm font-bold">DAYS</span></div>
+            </div>
+            <div>
+                <div class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-1">Red Sea</div>
+                <div class="text-2xl font-black text-editorial-red uppercase">High Risk</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="map-wrapper" style="position: relative;">
+        <div id="map-container" class="mb-8 border-b border-editorial pb-8"></div>
+        <div id="tooltip"></div>
+    </div>
+
+    <div class="grid grid-cols-5 gap-6 border-b border-editorial pb-8 mb-8">
+        <div>
+            <h3 class="text-sm font-bold uppercase tracking-widest text-gray-500 mb-2 border-t-2 border-editorial-red pt-2 w-16">The Numbers</h3>
+        </div>
+        <div>
+            <div class="text-5xl font-black text-editorial-red mb-1">{{ metrics.avg_delay }} <span class="text-xl">DAYS</span></div>
+            <div class="text-xs font-bold uppercase text-gray-600 tracking-wider">Average Delay</div>
+        </div>
+        <div>
+            <div class="text-5xl font-black text-[#1C2833] mb-1">{{ metrics.cost_impact }}</div>
+            <div class="text-xs font-bold uppercase text-gray-600 tracking-wider">Estimated Cost Impact</div>
+        </div>
+        <div>
+            <div class="text-5xl font-black text-[#556B2F] mb-1">{{ metrics.co2_impact }} <span class="text-xl">MT</span></div>
+            <div class="text-xs font-bold uppercase text-gray-600 tracking-wider">Additional CO₂</div>
+        </div>
+        <div>
+            <div class="text-5xl font-black text-editorial-red mb-1" id="bottom-vessel-count">{{ metrics.active_vessels }}</div>
+            <div class="text-xs font-bold uppercase text-gray-600 tracking-wider">Rerouted Vessels</div>
+        </div>
+    </div>
+
+    <script>
+        const deckgl = new deck.DeckGL({
+            container: 'map-container',
+            mapStyle: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
+            initialViewState: { longitude: 50.0, latitude: 10.0, zoom: 2.5, pitch: 35, bearing: 0 },
+            controller: true,
+            layers: []
+        });
+
+        const routeData = [
+            {source: [32.3, 31.2], target: [103.8, 1.3], color: [200, 200, 200, 120]}, // Suez to Malacca
+            {source: [18.4, -34.3], target: [103.8, 1.3], color: [215, 57, 37, 150]}    // Cape to Malacca (Diverted)
+        ];
+
+        const fleetData = new Map();
+        const ws = new WebSocket(`ws://${window.location.host}/ws/fleet`);
+        
+        ws.onmessage = function(event) {
+            const ship = JSON.parse(event.data);
+            fleetData.set(ship.mmsi, ship); 
+
+            const arcLayer = new deck.ArcLayer({
+                id: 'trade-routes',
+                data: routeData,
+                getSourcePosition: d => d.source,
+                getTargetPosition: d => d.target,
+                getSourceColor: d => d.color,
+                getTargetColor: d => d.color,
+                getWidth: 3
+            });
+
+            const scatterLayer = new deck.ScatterplotLayer({
+                id: 'live-fleet',
+                data: Array.from(fleetData.values()),
+                getPosition: d => [d.longitude, d.latitude],
+                getFillColor: [215, 57, 37, 255],
+                radiusMinPixels: 2.5,
+                radiusMaxPixels: 8,
+                pickable: true,
+                onHover: ({object, x, y}) => {
+                    const el = document.getElementById('tooltip');
+                    if (object) {
+                        el.innerHTML = `<strong style="color:#D73925">${object.vessel_name}</strong><br/>
+                                        Type: ${object.vessel_type}<br/>
+                                        Speed: ${object.speed_knots.toFixed(1)} kts<br/>
+                                        Heading: ${object.heading_degrees.toFixed(0)}°`;
+                        el.style.display = 'block';
+                        el.style.left = x + 'px';
+                        el.style.top = y + 'px';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                }
+            });
+
+            deckgl.setProps({ layers: [arcLayer, scatterLayer] });
+            document.getElementById('vessel-count').innerText = fleetData.size;
+            document.getElementById('bottom-vessel-count').innerText = fleetData.size;
+        };
+    </script>
+</body>
+</html>

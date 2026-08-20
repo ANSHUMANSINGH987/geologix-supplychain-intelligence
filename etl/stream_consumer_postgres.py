@@ -6,6 +6,7 @@ Description: Consumes high-throughput telemetry from the 'vessel_stream' Kafka t
 """
 
 import json
+import os
 import time
 import logging
 from datetime import datetime
@@ -22,16 +23,16 @@ logging.basicConfig(
 logger = logging.getLogger("Kafka_Postgres_Consumer")
 
 # Database & Kafka Configuration
-KAFKA_BROKER = "localhost:9092"
-TOPIC_NAME = "vessel_stream"
-GROUP_ID = "postgres_sink_group"
+KAFKA_BROKER = os.getenv("KAFKA_BROKER", "127.0.0.1:9093")
+TOPIC_NAME = os.getenv("KAFKA_TOPIC", "vessel_stream")
+GROUP_ID = os.getenv("KAFKA_CONSUMER_GROUP", "postgres_sink_group")
 
 DB_PARAMS = {
-    "dbname": "geologix_streaming",
-    "user": "geologix_admin",
-    "password": "supersecretpassword",
-    "host": "localhost",
-    "port": "5432"
+    "dbname": os.getenv("POSTGRES_DB", "geologix_streaming"),
+    "user": os.getenv("POSTGRES_USER", "geologix_admin"),
+    "password": os.getenv("POSTGRES_PASSWORD", "supersecretpassword"),
+    "host": os.getenv("POSTGRES_HOST", "127.0.0.1"),
+    "port": os.getenv("POSTGRES_PORT", "5433")
 }
 
 # Micro-Batching Tuning Parameters

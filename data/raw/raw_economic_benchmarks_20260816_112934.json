@@ -1,0 +1,62 @@
+[
+  {
+    "trade_lane_code": "SHA-RTM",
+    "trade_lane_name": "Shanghai to Rotterdam (Asia-Europe Corridor)",
+    "origin_port": "CNSHA",
+    "destination_port": "NLRTM",
+    "spot_rate_usd_feu": 4425.0,
+    "bunker_fuel_price_usd_per_mt": 620.5,
+    "war_risk_surcharge_rate_pct": 0.75,
+    "carbon_tax_eur_per_ton_co2": 88.0,
+    "effective_date": "2026-08-16",
+    "ingestion_timestamp_utc": "2026-08-16T11:29:34.723953+00:00"
+  },
+  {
+    "trade_lane_code": "SIN-HAM",
+    "trade_lane_name": "Singapore to Hamburg (SE Asia - Europe)",
+    "origin_port": "SGSIN",
+    "destination_port": "DEHAM",
+    "spot_rate_usd_feu": 4150.0,
+    "bunker_fuel_price_usd_per_mt": 615.0,
+    "war_risk_surcharge_rate_pct": 0.75,
+    "carbon_tax_eur_per_ton_co2": 88.0,
+    "effective_date": "2026-08-16",
+    "ingestion_timestamp_utc": "2026-08-16T11:29:34.723953+00:00"
+  },
+  {
+    "trade_lane_code": "SHA-LAX",
+    "trade_lane_name": "Shanghai to Los Angeles (Transpacific Lane)",
+    "origin_port": "CNSHA",
+    "destination_port": "USLAX",
+    "spot_rate_usd_feu": 6244.0,
+    "bunker_fuel_price_usd_per_mt": 645.0,
+    "war_risk_surcharge_rate_pct": 0.0,
+    "carbon_tax_eur_per_ton_co2": 0.0,
+    "effective_date": "2026-08-16",
+    "ingestion_timestamp_utc": "2026-08-16T11:29:34.723953+00:00"
+  },
+  {
+    "trade_lane_code": "INNSA-RTM",
+    "trade_lane_name": "Nhava Sheva to Rotterdam (India-Europe Subcontinent Lane)",
+    "origin_port": "INNSA",
+    "destination_port": "NLRTM",
+    "spot_rate_usd_feu": 3850.0,
+    "bunker_fuel_price_usd_per_mt": 630.0,
+    "war_risk_surcharge_rate_pct": 0.85,
+    "carbon_tax_eur_per_ton_co2": 88.0,
+    "effective_date": "2026-08-16",
+    "ingestion_timestamp_utc": "2026-08-16T11:29:34.723953+00:00"
+  },
+  {
+    "trade_lane_code": "AEJEA-PIR",
+    "trade_lane_name": "Jebel Ali to Piraeus (Middle East - Med)",
+    "origin_port": "AEJEA",
+    "destination_port": "GRPIR",
+    "spot_rate_usd_feu": 3100.0,
+    "bunker_fuel_price_usd_per_mt": 610.0,
+    "war_risk_surcharge_rate_pct": 1.2,
+    "carbon_tax_eur_per_ton_co2": 88.0,
+    "effective_date": "2026-08-16",
+    "ingestion_timestamp_utc": "2026-08-16T11:29:34.723953+00:00"
+  }
+]

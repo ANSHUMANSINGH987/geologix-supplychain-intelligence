@@ -1,18 +1,19 @@
 """
 GeoLogix: Initialize PostgreSQL Streaming Sink
 """
-import psycopg2
+import os
 import logging
+import psycopg2
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] - %(message)s")
 logger = logging.getLogger("DB_Init")
 
 DB_PARAMS = {
-    "dbname": "geologix_streaming",
-    "user": "geologix_admin",
-    "password": "supersecretpassword",
-    "host": "localhost",
-    "port": "5432"
+    "dbname": os.getenv("POSTGRES_DB", "geologix_streaming"),
+    "user": os.getenv("POSTGRES_USER", "geologix_admin"),
+    "password": os.getenv("POSTGRES_PASSWORD", "supersecretpassword"),
+    "host": os.getenv("POSTGRES_HOST", "127.0.0.1"),
+    "port": os.getenv("POSTGRES_PORT", "5433")
 }
 
 STREAMING_TABLE_DDL = """
